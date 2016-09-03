@@ -11,7 +11,15 @@ Possible use cases:
 
 The software and hardware is described at a high level [here](TODO).
 
-### License
+## software
+
+- `coordinator.py` contains software for the computer sending keystrokes. Requirements:
+  - python 2.7
+  - Tkinter
+  - serial
+- `replay_arduino.ino` contain software for the Arduino.
+
+### license
 
 This software is released under the GPLv3 license.
 Please see the `LICENSE` file or visit the [Free Software Foundation](https://www.gnu.org/licenses/gpl-3.0.en.html).
