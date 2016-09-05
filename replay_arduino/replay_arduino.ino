@@ -11,7 +11,7 @@ void setup() {
   // connect to serial device to output print (only if available).
   // uncomment below if you would like to require a serial connection.
   // this is useful when debugging
-//  Serial.begin(9600);
+  Serial.begin(9600);
 //  while (!Serial) {
 //    ;
 //  }
