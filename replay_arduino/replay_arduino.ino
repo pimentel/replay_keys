@@ -2,17 +2,19 @@
 
 void setup() {
 
-  // connect to bluetooth device
+  // connect to bluetooth device and wait on it
   Serial1.begin(2400);
   while (!Serial1) {
     ;
   }
 
-  // connect to serial device to output print
-  Serial.begin(9600);
-  while (!Serial) {
-    ; // wait for serial port to connect. Needed for native USB
-  }
+  // connect to serial device to output print (only if available).
+  // uncomment below if you would like to require a serial connection.
+  // this is useful when debugging
+//  Serial.begin(9600);
+//  while (!Serial) {
+//    ;
+//  }
 
   // initialize control over the keyboard:
   Keyboard.begin();
@@ -68,7 +70,7 @@ char special_lookup(char c) {
     case ';':
     case '<':
       // F keys. F1 starts at 193 decimal
-      return 193 + int(c - '0');    
+      return 193 + int(c - '0');
     default:
       // upon error, enter a '?'
       return '?';
@@ -86,7 +88,7 @@ char safe_read() {
 
 char get_character() {
   char next;
-  
+
   next = safe_read();
 
   if (next == '<') {
@@ -101,9 +103,10 @@ char get_character() {
   Serial.print(" : ");
   Serial.print(next);
   Serial.print("\n\r");
+
   return next;
 }
-  
+
 void loop() {
   char incoming;
   int n_keys = 0;
@@ -125,4 +128,3 @@ void loop() {
 
   }
 }
-

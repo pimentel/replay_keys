@@ -13,11 +13,11 @@ The software and hardware is described at a high level [here](TODO).
 
 ## software
 
-- `coordinator.py` contains software for the computer sending keystrokes. Requirements:
+- `logger.py` contains software for the computer sending keystrokes. Requirements:
   - python 2.7
   - Tkinter
   - serial
-- `replay_arduino.ino` contain software for the Arduino.
+- `replay_arduino` contains software for the Arduino.
 
 ### license
 

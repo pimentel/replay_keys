@@ -2,20 +2,27 @@ import serial
 import time
 from Tkinter import *
 
-SERIAL_TERMINAL = '/dev/tty.VIRTKEY-DevB'
-BAUD = 2400
+###
+# configuration
+###
+
+# only mac is currently supported
 OS = 'mac'
 
-root = Tk()
+# tty for Bluetooth device with baud
+SERIAL_TERMINAL = '/dev/tty.VIRTKEY-DevB'
+BAUD = 2400
 
-# Mask on event.state
-#####
-# 0x0001	Shift.
-# 0x0002	Caps Lock.
-# 0x0004	Control.
-# 0x0008	Left-hand Alt.
-# 0x0010	Num Lock.
-# 0x0080	Right-hand Alt.
+# connect and transmit to serial device?
+TRANSMIT = False
+
+# font size for GUI
+FONT_SIZE = 16
+
+###
+# end configuration
+###
+
 
 # Keys on Arduino
 #####
@@ -56,6 +63,11 @@ root = Tk()
 # KEY_F11	0xCC	204
 # KEY_F12	0xCD	205
 
+special_mappings = {
+    # ctrl-0 to cmd-space
+    ('0', ('<C>',)): (' ', ('<M>',))
+}
+
 special_characters = {
     'Up': '<u>',
     'Down': '<d>',
@@ -83,12 +95,21 @@ special_characters['F11'] = '<;>'
 special_characters['F12'] = '<<>'
 # print(special_characters)
 
+# Mask on event.state
+#####
+# 0x0001	Shift.
+# 0x0002	Caps Lock.
+# 0x0004	Control.
+# 0x0008	Left-hand Alt.
+# 0x0010	Num Lock.
+# 0x0080	Right-hand Alt.
 def is_alt(s):
     if OS == 'mac':
         return (s & 0x10) != 0
 def is_command(s):
     if OS == 'mac':
         return (s & 0x8) != 0 or (s & 0x80) != 0
+
 def get_modifiers(s):
     modifiers = set()
     ctrl  = (s & 0x4) != 0
@@ -112,6 +133,7 @@ def get_modifiers(s):
     # if caps_lock:
     #     modifiers.add('caps_lock')
     return modifiers
+
 def get_key(event):
     symbol = event.keysym
     # print 'event.char "{}" "{}" "{}" "{}"'.format(event.char, repr(event.char), len(event.char), symbol)
@@ -128,15 +150,31 @@ def get_key(event):
     else:
         return 'ERROR'
 
+def set_to_tuple(s):
+    return tuple(list(s))
+
+def translate_keys(key, modifiers):
+    current_combo = (key, set_to_tuple(modifiers))
+    # print current_combo
+    if current_combo in special_mappings:
+        translation = special_mappings[current_combo]
+        print 'translating {} to {}'.format(current_combo, translation)
+        return translation
+    return (key, modifiers)
+
 def encode(key, modifiers):
+    key, modifiers = translate_keys(key, modifiers)
     n_pressed = len(modifiers) + (0 if key == '' else 1)
     modifier_string = ''.join(modifiers)
     return '{}{}{}'.format(n_pressed, modifier_string, key)
 
 class KeyHandler():
-    def __init__(self, parent, ser):
+    def __init__(self, parent, ser, status_label):
         self.parent = parent
         self.parent.bind("<Key>", self.keypress)
+        self.status_label = status_label
+
+        self.ser = ser
 
         # set the state to be disabled so we don't get weird special characters
         self.parent.config(state = DISABLED)
@@ -156,30 +194,37 @@ class KeyHandler():
         print encoding
 
         for x in encoding:
-            print 'writing: ', x
-            ser.write(x)
+            print "writing: '{}'".format(x)
+            if self.ser is not None:
+                self.ser.write(x)
         time.sleep(1 / 1000000)
         self.parent_insert(event.char)
+        self.status_label.set(encoding)
+
+# begin main
+root = Tk()
+root.wm_title('replay keys')
 
 frame = Frame(root, width = 400, height = 300)
-frame.pack(fill=BOTH, expand=True)
+frame.pack(fill = BOTH, expand = True)
 
-text_box = Text(frame, font=("Helvetica", 16))
+text_box = Text(frame, font = ("Helvetica", FONT_SIZE))
 text_box.config(state = DISABLED)
 text_box.focus_set()
 text_box.grid(row = 0, rowspan = 5)
 
-v = StringVar()
+status_text = StringVar()
 
-label = Label(frame, textvariable = v, font=("Helvetica", 16))
+label = Label(frame, textvariable = status_text, font = ("Helvetica", FONT_SIZE))
 
 label.grid(row = 5, rowspan = 1)
 
-# TODO: pass this into KeyHandler and update with the latest key sent
-v.set('hello')
+status_text.set('No keys transmitted yet.')
 
-# text_box.bind("<Key>", lambda e: key(e, v))
-
-with serial.Serial(SERIAL TERMINAL, BAUD) as ser:
-    key_handler = KeyHandler(text_box, ser)
+if TRANSMIT:
+    with serial.Serial(SERIAL_TERMINAL, BAUD) as ser:
+        key_handler = KeyHandler(text_box, ser, status_text)
+        root.mainloop()
+else:
+    key_handler = KeyHandler(text_box, None, status_text)
     root.mainloop()
